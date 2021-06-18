@@ -36,7 +36,8 @@ jobs:
           plugin_languages_limit: 0
           plugin_languages_recent_days: 365
           plugin_languages_recent_load: 1000
-          plugin_languages_ignored: Go, TypeScript, EJS, Obective-C, 
+          plugin_languages_ignored: go, typescript, ejs, obective-c
+          plugin_languages_skipped: atom-clock, goformation, franz, aws-diagrams, rds_auto_upgrader, atom-mocha-test-runner, kubernetes-kafka, uptime, team-up
           plugin_languages_sections: most-used, recently-used
           plugin_languages_threshold: 0%
           plugin_notable: yes
