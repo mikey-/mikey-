@@ -13,12 +13,15 @@ jobs:
       - name: lowlighter/metrics 😁
         uses: lowlighter/metrics@latest
         with:
-          user: mikey-
-          token: ${{ secrets.METRICS_TOKEN }}
           base: header, activity, community, repositories, metadata
           repositories: 100
           repositories_forks: yes
           repositories_affiliations: owner, collaborator, organization_member
+          token: ${{ secrets.METRICS_TOKEN }}
+          user: mikey-
+          config_order: introduction, skyline, languages, achievements
+          plugin_introduction: yes
+          plugin_introduction_title: yes
           plugin_skyline: yes
           plugin_skyline_year: 2021
           plugin_skyline_frames: 120
@@ -26,7 +29,6 @@ jobs:
           plugin_skyline_compatibility: yes
           plugin_languages: yes
           plugin_languages_limit: 0
-          plugin_languages_colors: "javascript:#78c9f5, #955dd9:shell, ruby:#b00904, python:#075c1e"
           plugin_languages_sections: most-used, recently-used
           plugin_languages_details: bytes-size, percentage
           plugin_languages_recent_load: 1000
