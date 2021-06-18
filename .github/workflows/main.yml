@@ -1,7 +1,7 @@
 name: Metrics
 on:
   # Schedule updates (each hour)
-  schedule: [{cron: "0 * * * *"}]
+  schedule: [{cron: "0 14 * * *"}]
   # Lines below let you run workflow manually and on each commit (optional)
   workflow_dispatch:
   push: {branches: ["master", "main"]}
@@ -20,14 +20,15 @@ jobs:
           repositories_forks: yes
           repositories_affiliations: owner, collaborator, organization_member
           plugin_skyline: yes
-          plugin_skyline_frames: 60
-          plugin_skyline_quality: 2
+          plugin_skyline_year: 2021
+          plugin_skyline_frames: 120
+          plugin_skyline_quality: 1
           plugin_skyline_compatibility: yes
           plugin_languages: yes
           plugin_languages_limit: 0
           plugin_languages_colors: "javascript:#78c9f5, #955dd9:shell, ruby:#b00904, python:#075c1e"
           plugin_languages_sections: most-used, recently-used
-          plugin_languages_details: bytes-size, percentage, lines
+          plugin_languages_details: bytes-size, percentage
           plugin_languages_recent_load: 1000
           plugin_languages_recent_days: 0
           plugin_achievements: yes
