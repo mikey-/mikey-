@@ -36,7 +36,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
                                 <path fill-rule="evenodd" d="M5.5 3.5a2 2 0 100 4 2 2 0 000-4zM2 5.5a3.5 3.5 0 115.898 2.549 5.507 5.507 0 013.034 4.084.75.75 0 11-1.482.235 4.001 4.001 0 00-7.9 0 .75.75 0 01-1.482-.236A5.507 5.507 0 013.102 8.05 3.49 3.49 0 012 5.5zM11 4a.75.75 0 100 1.5 1.5 1.5 0 01.666 2.844.75.75 0 00-.416.672v.352a.75.75 0 00.574.73c1.2.289 2.162 1.2 2.522 2.372a.75.75 0 101.434-.44 5.01 5.01 0 00-2.56-3.012A3 3 0 0011 4z"/>
                             </svg>
-                            Followed by 35 users
+                            Followed by 34 users
                         </div>
                     </section>
                     <section>
@@ -471,7 +471,7 @@
                                     </defs>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="gauge info">
                                         <circle class="gauge-base" r="25" cx="28" cy="28"/>
-                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="63.527720739219696 155"/>
+                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="64.12183436002738 155"/>
                                     </svg>
                                     <svg xmlns="http://www.w3.org/2000/svg" mask="url(#mask)">
                                         <g xmlns="http://www.w3.org/2000/svg" transform="translate(5 4)" fill="none" fill-rule="evenodd">
@@ -635,7 +635,7 @@
                                 <div class="title">
                                     <span class="prefix">Great</span>
                                     developer
-                                    <span class="gh">ranked 1.61m out of 158m users</span>
+                                    <span class="gh">ranked 1.61m out of 159m users</span>
                                 </div>
                                 <div class="text">Published 33 public repositories</div>
                             </div>
@@ -681,7 +681,7 @@
                                     </defs>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="gauge info">
                                         <circle class="gauge-base" r="25" cx="28" cy="28"/>
-                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="26.482412060301506 155"/>
+                                        <circle class="gauge-arc" transform="rotate(-90 28 28)" r="25" cx="28" cy="28" stroke-dasharray="25.703517587939697 155"/>
                                     </svg>
                                     <svg xmlns="http://www.w3.org/2000/svg" mask="url(#mask)">
                                         <g transform="translate(4 4)" stroke-width="2" fill="none" fill-rule="evenodd">
@@ -718,9 +718,9 @@
                                 <div class="title">
                                     <span class="prefix"></span>
                                     Influencer
-                                    <span class="gh">ranked 451k out of 158m users</span>
+                                    <span class="gh">ranked 470k out of 159m users</span>
                                 </div>
-                                <div class="text">Followed by 35 users</div>
+                                <div class="text">Followed by 34 users</div>
                             </div>
                         </div>
                         <div class="achievement c largeable-width-half">
@@ -1122,21 +1122,38 @@ server varies by the type of query, the size of response, and the
 protocol in use. For more information and recommendations for a
 scalable DNS architecture, see the Hybrid Cloud DNS Solutions for
 Amazon VPC whitepaper.</i>
-                                        It's important to note that the metric we're looking at here is packets per second, per ENI. What's important about this? Well, it may not be immediately obvious that although the actual number of packets per query varies, there are typically multiple packets per DNS query. 
-While these packets cannot be seen in VPC flow logs, upon reviewing my own packet captures, I can see some resolutions consisting of about 4 packets. 
+                                        It's important to note that the metric we're looking at here is packets per second, per ENI. What's important about this? Well, it may not be immediately obvious that although the actual number of packets per query varies, there are typically multiple packets per DNS query.
+While these packets cannot be seen in VPC flow logs, upon reviewing my own packet captures, I can see some resolutions consisting of about 4 packets.
 Unfortunately, I can't say much about the whitepaper; at this stage, I'm not really considering the implementation of a hybrid DNS service as a "good" solution.
-                                        <b>Solutions</b>
-                                        I'm looking into ways to alleviate the risk of this error occurring, and to limit it's impacts when it does occur. As I see it, there are number of options to achieve this:
+                                        <b>How we solved the problem</b>
+                                        We tackled the problem by increasing the number of ENIs created by AWS Hyperplane.
+In ERROR AWS Lambda SDK: Temporary failure in name resolution - vfrank66 hinted at, and jarmod noted that there is maximum number - 1024 per ENI, of packets that can be sent to the Amazon Route 53 Resolver in one second.
+Interestingly, while this number is a hard limit, it is relative to a single ENI; increasing the number of ENIs would allow you to send more packets, per second, to the Amazon Route 53 Resolver.
+The number of ENIs used by Lambda can be increased by increasing the number of security group:subnet combinations in your VPC. Two ways to achieve this are:
 
-Force Lambda Functions to resolve the Aurora Cluster's DNS before doing anything else and use the private IP address for the connection and handle failures with an exponential back-off. To minimise the cost of waiting for reties, I've set a total timeout of 5 seconds for DNS resolution. This number includes all back-off wait time.  
-Making many, short-lived connections comes with a potentially costly overhead, even if you're closing the connection. Consider using connection pooling on the client side, as it is a common misconception that Aurora's connection pooling is sufficient to handle the overhead of many short-lived connections.
-Try not to rely on DNS where possible. Aurora automatically handles failover and promotion/demotion of instances, so it's important to know that you're always connected to the "right" (or write, in some cases :P) instance. As updates to the Aurora cluster's DNS name can take time to propagate, even with it's 5 second TTLs, it might be better to make use of the
+Attaching distinct security groups to distinct Lambda functions
+
+Hosting your Lambda functions in multiple subnets
+
+
+Finally, it is important to understand how and when AWS Hyperplane creates ENIs:
+                                        <i>Hyperplane now creates a shared network interface when your Lambda function is first created or when its VPC settings are updated, improving function setup performance and scalability. This one-time setup can take up to 90 seconds to complete</i>
+                                        See Improved VPC Networking for AWS Lambda Functions for more information on AWS Hyperplane, security group:subnet combinations and their relationship to ENIs.
+                                        <b>Other potential solutions</b>
+                                        Prior to implementing the solution mentioned above, I was looking into ways to alleviate the risk of this error occurring, and to limit it's impacts when it does occur. I found a number of options to achieve this:
+
+Force Lambda Functions to resolve the Aurora Cluster's DNS before doing anything else and use the private IP address for the connection and handle failures with an exponential back-off. To minimise the cost of waiting for reties, I've set a total timeout of 5 seconds for DNS resolution. This number includes all back-off wait time.
+
+Using connection pooling on the client side - as it is a common misconception that Aurora's connection pooling is sufficient to handle the overhead of many short-lived connections and making many, short-lived connections comes with a potentially costly overhead, even if you're closing the connection.
+
+Try not to rely on DNS where possible. Aurora automatically handles failover and promotion/demotion of instances, so it's important to know that you're always connected to the "right" instance (or write, in some cases :P). As updates to the Aurora cluster's DNS name can take time to propagate - even with it's 5 second TTLs; it might be better to make use of the
                                         <code>INFORMATION_SCHEMA.REPLICA_HOST_STATUS</code>
-                                        table, in which MySQL exposes " in near-real-time" metadata about DB instances. Note that the table "contains cluster-wide metadata". If you cbf, have a look at option 4.
+                                        table, in which MySQL exposes "in near-real-time" metadata about DB instances. Note that the table "contains cluster-wide metadata". If you cbf, have a look at option 4.
+
 Use a smart driver, which:
                                         <i>is a database driver or connector with the ability to read DB
 cluster topology from the metadata table. It can route new
-connections to individual instance endpoints without relying on 
+connections to individual instance endpoints without relying on
 high-level cluster endpoints. A smart driver is also typically
 capable of load balancing read-only connections across the available
 Aurora Replicas in a round-robin fashion.</i>
@@ -1265,7 +1282,7 @@ Love Mikey :)
             </section>
             <footer>
                 <span>These metrics do not include all private contributions</span>
-                <span>Last updated 9 Mar 2025, 01:04:18 (timezone Australia/Melbourne) with lowlighter/metrics@3.34.0</span>
+                <span>Last updated 16 Mar 2025, 01:05:32 (timezone Australia/Melbourne) with lowlighter/metrics@3.34.0</span>
             </footer>
         </div>
         <div xmlns="http://www.w3.org/1999/xhtml" id="metrics-end"></div>
