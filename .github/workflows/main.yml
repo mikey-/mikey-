@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # See action.yml for all options
-      - name: lowlighter/metrics 😁
-        uses: lowlighter/metrics@latest
+      - name: mikey-/metrics 😁
+        uses: mikey-/metrics@master
         with:
           token: ${{ secrets.METRICS_TOKEN }}
           user: mikey-
